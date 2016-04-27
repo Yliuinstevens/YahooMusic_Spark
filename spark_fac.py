@@ -80,8 +80,11 @@ print("Rewrite test data finished, Spend %.2f s"%(time.time()-start_time))
 print("----------------------------------------------------------------")
 print("Start Spark")
 print("----------------------------------------------------------------")
+# Setup environment variables to avoid connection error
+os.environ["SPARK_LOCAL_HOSTNAME"] = "localhost"
 
 sparkC = SparkContext()
+sparkC.setCheckpointDir('checkpoint/')
 sqlC = SQLContext(sparkC)
 trainData = sparkC.textFile("Data/trainData.txt").map(lambda line: line.split("\t"))
 testData = sparkC.textFile("Data/testData.txt").map(lambda line: line.split("\t"))
@@ -91,7 +94,7 @@ trainDataFrame = sqlC.createDataFrame(trainData,["user","item","rating"])
 testDataFrame = sqlC.createDataFrame(testData,["user","item"])
 
 # You can change the rank and maxIter here
-als = ALS(rank = 10,maxIter = 20)
+als = ALS(rank = 10,maxIter = 20,checkpointInterval=2)
 # Matrix Factorization
 model = als.fit(trainDataFrame)
 predTestData = model.transform(testDataFrame)
